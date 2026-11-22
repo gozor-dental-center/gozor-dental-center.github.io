@@ -292,6 +292,8 @@ form.addEventListener("submit", (e) => {
 );
 
 /* ---------- 3D world ---------- */
+// ?bench scrolls the page by itself and reports how smooth it was (for testing on real devices).
+if (location.search.includes("bench")) import("./bench.js");
 const canvas = $("#gl");
 const docHeight = () => document.documentElement.scrollHeight;
 

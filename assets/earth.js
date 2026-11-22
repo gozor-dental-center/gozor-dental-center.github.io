@@ -452,7 +452,14 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     () => roots.glow.visible && ((roots.glow.visible = false), true),       // the soft glow around the roots
     // No step below 1×: drawing fewer pixels than the screen has made the whole scene look blurry.
   ];
-  const stepDown = () => { for (const step of ladder) if (step()) return; };
+  const stepNames = ["pixels", "shadows", "gloss", "glow"];
+  const stepDown = () => {
+    for (let i = 0; i < ladder.length; i++) if (ladder[i]()) {
+      const d = document.documentElement.dataset; // read by bench.js
+      d.quality = (d.quality ? d.quality + "," : "") + stepNames[i];
+      return;
+    }
+  };
   function swapToStandard() {
     const t = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.26, envMap: tooth.material.envMap, envMapIntensity: 1.05 });
     const sm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, envMap: tooth.material.envMap, envMapIntensity: 0.45 });
