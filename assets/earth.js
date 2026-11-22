@@ -160,7 +160,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     // Phones keep edge smoothing and draw at up to 2× (they were at 1.5× with no smoothing, which
     // looked pixelated on 3× screens). If a phone turns out slow, the quality ladder lowers it.
     aa: opt("aa", 1), shadow: opt("shadow", lite ? 0 : 1), glow: opt("glow", 1),
-    phys: opt("phys", lite ? 0 : 1), pr: opt("pr", lite ? 2 : 1.5), flora: opt("flora", lite ? 0.7 : 1), adapt: opt("adapt", 1),
+    phys: opt("phys", lite ? 0 : 1), pr: opt("pr", lite ? 2 : 1.5), flora: opt("flora", lite ? 0.7 : 1), adapt: opt("adapt", location.search.includes("zone") ? 0 : 1),
   };
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !!Q.aa, powerPreference: "high-performance" });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -758,6 +758,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
       }
       return;
     }
+    if (window.__earth?.paused) return; // ?bench&zone measures the page with no 3D drawing
     if (warmRoots) {
       // Draw every root band once, while the page is still at the top, so the browser uploads them
       // all now. Otherwise each band was uploaded the moment it first scrolled into view, which
@@ -781,7 +782,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
   const onResize = () => { layout(false); clearTimeout(rt); rt = setTimeout(() => layout(false), 250); };
   addEventListener("resize", onResize);
 
-  if (location.search.includes("debug")) window.__earth = { lite, Q, renderer, scene, roots, sun, above, below, tooth, sick, floaters, get flora() { return flora; }, face, L };
+  if (/debug|bench/.test(location.search)) window.__earth = { lite, Q, renderer, scene, roots, sun, above, below, tooth, sick, floaters, get flora() { return flora; }, face, L };
   return {
     frame,
     relayout: () => layout(false),
