@@ -157,8 +157,10 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
   const P = new URLSearchParams(location.search);
   const opt = (k, d) => (P.has("q-" + k) ? Number(P.get("q-" + k)) : d);
   const Q = {
-    aa: opt("aa", lite ? 0 : 1), shadow: opt("shadow", lite ? 0 : 1), glow: opt("glow", 1),
-    phys: opt("phys", lite ? 0 : 1), pr: opt("pr", 1.5), flora: opt("flora", lite ? 0.7 : 1), adapt: opt("adapt", 1),
+    // Phones keep edge smoothing and draw at up to 2× (they were at 1.5× with no smoothing, which
+    // looked pixelated on 3× screens). If a phone turns out slow, the quality ladder lowers it.
+    aa: opt("aa", 1), shadow: opt("shadow", lite ? 0 : 1), glow: opt("glow", 1),
+    phys: opt("phys", lite ? 0 : 1), pr: opt("pr", lite ? 2 : 1.5), flora: opt("flora", lite ? 0.7 : 1), adapt: opt("adapt", 1),
   };
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !!Q.aa, powerPreference: "high-performance" });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -432,7 +434,6 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
   // ---------- layout ----------
   const L = { vh: 1, h: 1, wv: 1, k: 1, depth: 10, toothX: 0, S: 1.6, heroY: 3.6, heroPitch: -0.105, wide: true, fKey: 0, gKey: 0, gDepth: 0 };
   // Pixel density: capped, and lowered by itself if frames take too long on this device.
-  // Light mode draws 85% of the pixels and lets the browser scale up (soft edges, no anti-aliasing cost).
   let maxPR = Q.pr;
   const perf = { n: 0, sum: 0, slow: 0 };
   let readyAt = 0;
@@ -449,7 +450,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     () => renderer.shadowMap.enabled && ((renderer.shadowMap.enabled = false), scene.traverse((o) => o.material && (o.material.needsUpdate = true)), true),
     () => tooth.material.isMeshPhysicalMaterial && (swapToStandard(), true), // simpler gloss on the teeth
     () => roots.glow.visible && ((roots.glow.visible = false), true),       // the soft glow around the roots
-    () => effPR() > 0.9 && (setPR(0.9), true),                              // last resort: a slightly softer image
+    // No step below 1×: drawing fewer pixels than the screen has made the whole scene look blurry.
   ];
   const stepDown = () => { for (const step of ladder) if (step()) return; };
   function swapToStandard() {
