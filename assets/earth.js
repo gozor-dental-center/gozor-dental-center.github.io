@@ -435,7 +435,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
   const L = { vh: 1, h: 1, wv: 1, k: 1, depth: 10, toothX: 0, S: 1.6, heroY: 3.6, heroPitch: -0.105, wide: true, fKey: 0, gKey: 0, gDepth: 0 };
   // Pixel density: capped, and lowered by itself if frames take too long on this device.
   let maxPR = Q.pr;
-  const perf = { n: 0, sum: 0, slow: 0, jank: 0 };
+  const perf = { dts: [], slow: 0 };
   let readyAt = 0;
   const setPR = (v) => {
     maxPR = v;
@@ -700,14 +700,19 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     // on Intel HD + Firefox the first screen averaged 46 fps with 30% stuttering frames, which the
     // old average-only rule (under 38 fps, twice in a row) never caught. Two slow windows in a row
     // step the quality down, so one hiccup does not.
+    // A steady 30 fps is not slowness: iPhones in Low Power Mode cap Safari at 30 fps even with no 3D
+    // at all (measured with ?bench&zone). So stutter is judged against the window's own median frame,
+    // and a window whose frames sit evenly at ~33 ms counts as a capped screen, not a slow one.
     if (ready && now - readyAt > 2000 && document.visibilityState === "visible" && raw < 0.5) {
-      perf.sum += raw;
-      if (raw > 0.025) perf.jank++;
-      if (++perf.n === 60) {
-        const slow = perf.sum / perf.n > 0.021 || perf.jank / perf.n > 0.125;
+      perf.dts.push(raw);
+      if (perf.dts.length === 60) {
+        const s = [...perf.dts].sort((a, b) => a - b), med = s[30], p90 = s[54];
+        const capped = med > 0.03 && med < 0.036 && p90 < 0.04;
+        const jank = perf.dts.filter((d) => d > Math.max(0.025, med * 1.6)).length / 60;
+        const slow = (!capped && med > 0.021) || jank > 0.125;
         perf.slow = Q.adapt && slow ? perf.slow + 1 : 0;
         if (perf.slow >= 2) { perf.slow = 0; stepDown(); }
-        perf.n = 0; perf.sum = 0; perf.jank = 0;
+        perf.dts.length = 0;
       }
     }
     if (!reduce) time.value += dt;
