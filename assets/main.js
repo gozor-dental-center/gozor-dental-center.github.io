@@ -114,7 +114,9 @@ addEventListener("scroll", onScrollHeader, { passive: true });
 onScrollHeader();
 
 /* ---------- Above / below ground: header and colours switch once the hero scrolls away ---------- */
-const onScrollGround = () => root.classList.toggle("is-under", window.scrollY > innerHeight * 0.55);
+// Only the header changes colour below ground, so the class goes on the header: toggling it on <html>
+// made Safari restyle the whole page (thousands of animated word spans) right at the ground line.
+const onScrollGround = () => header.classList.toggle("is-under", window.scrollY > innerHeight * 0.55);
 addEventListener("scroll", onScrollGround, { passive: true });
 onScrollGround();
 
