@@ -7,6 +7,7 @@ import { RoomEnvironment } from "https://cdn.jsdelivr.net/npm/three@0.170.0/exam
 import { mergeVertices } from "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js/+esm";
 import { toothShellAsync, toothSDF, pause } from "./tooth3d.js";
 import { growNetwork, networkGeometry, networkGeometriesAsync, rootMaterials } from "./roots.js";
+import { decodeTeeth, loadTeeth } from "./teethbin.js";
 
 const FOV = 40;
 const D = 14; // camera distance from the cut face (z = 0)
@@ -148,8 +149,10 @@ function detectLite() {
   return matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 900;
 }
 
-export function createScene(canvas, { reduce = false, getScroll, getDocHeight, getLight, onReady, onLost } = {}) {
+export function createScene(canvas, { reduce = false, getScroll, getDocHeight, getLight, onReady, onLost, computeTeeth = false } = {}) {
   const lite = detectLite();
+  // Ready-made teeth (see teethbin.js). index.html preloads the file, so it is usually here already.
+  const teethFile = computeTeeth ? Promise.resolve(null) : loadTeeth(new URL("./teeth.bin.gz", import.meta.url));
   // Each setting can be overridden from the address for testing, e.g. ?q-aa=1&q-pr=1&q-glow=0
   const P = new URLSearchParams(location.search);
   const opt = (k, d) => (P.has("q-" + k) ? Number(P.get("q-" + k)) : d);
@@ -319,6 +322,16 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     return m;
   }
   async function buildTeeth() {
+    let baked = null;
+    try { const buf = await teethFile; if (buf) baked = decodeTeeth(buf); } catch (e) { console.warn("teeth.bin unreadable, building the teeth here.", e); }
+    if (baked) {
+      tooth.geometry = baked.tooth;
+      for (const f of floaters) f.geometry = baked.float;
+      sick.forEach((m, i) => { m.geometry.dispose(); m.geometry = baked["sick" + i]; });
+      toothReady = true;
+      renderer.shadowMap.needsUpdate = true;
+      return;
+    }
     tooth.geometry = await shell(72, toothSDF);
     toothReady = true;
     renderer.shadowMap.needsUpdate = true;

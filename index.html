@@ -44,6 +44,11 @@
   <meta name="theme-color" content="#e2f2f4">
   <link rel="icon" href="assets/logo.png">
   <link rel="stylesheet" href="assets/styles.css">
+  <!-- Start the 3D downloads right away instead of after main.js → earth.js → three.js. -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/+esm">
+  <link rel="modulepreload" href="assets/earth.js">
+  <link rel="preload" href="assets/teeth.bin.gz" as="fetch" crossorigin>
   <!-- Light/dark: dark is the default; a saved choice is applied before the page paints. -->
   <script id="theme-init">try { if (localStorage.getItem("jozour-theme") === "light") document.documentElement.classList.add("theme-light"); } catch (e) {}</script>
 </head>
@@ -53,7 +58,11 @@
   <!-- 3D world: one fixed canvas behind the content (field above, soil and roots below). -->
   <div class="stage" aria-hidden="true">
     <canvas id="gl"></canvas>
-    <img class="poster" src="assets/logo.png" alt="" width="876" height="595">
+    <!-- A still of the same scene, shown until the live 3D is ready (and kept if WebGL is unavailable). -->
+    <picture class="poster">
+      <source media="(max-aspect-ratio: 105/100)" srcset="assets/poster-tall.webp">
+      <img src="assets/poster-wide.webp" alt="" width="1215" height="691" fetchpriority="high">
+    </picture>
   </div>
 
   <header class="site-header" id="header">
