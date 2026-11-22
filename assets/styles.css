@@ -76,7 +76,8 @@ main { position: relative; z-index: 1; }
 }
 
 /* ---------- 3D stage ---------- */
-.stage { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+/* Sized to the tallest viewport (lvh), so the phone address bar sliding in and out does not resize the 3D. */
+.stage { position: fixed; inset: 0 0 auto 0; height: 100vh; height: 100lvh; z-index: 0; pointer-events: none; }
 #gl { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1s var(--ease); }
 html.gl-ready #gl { opacity: 1; }
 .poster { position: absolute; inset: 0; transition: opacity 0.9s var(--ease) 0.2s; }

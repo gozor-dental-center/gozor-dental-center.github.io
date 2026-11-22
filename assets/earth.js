@@ -446,7 +446,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
   // Quality ladder: when this device is measured slow, give up the least visible thing first.
   const effPR = () => Math.min(devicePixelRatio || 1, maxPR);
   const ladder = [
-    () => effPR() > 1 && (setPR(Math.max(1, effPR() - 0.25)), true),       // retina screens: fewer pixels
+    () => effPR() > 1 && (setPR(Math.max(1, effPR() - 0.5)), true),        // retina screens: fewer pixels
     () => renderer.shadowMap.enabled && ((renderer.shadowMap.enabled = false), scene.traverse((o) => o.material && (o.material.needsUpdate = true)), true),
     () => tooth.material.isMeshPhysicalMaterial && (swapToStandard(), true), // simpler gloss on the teeth
     () => roots.glow.visible && ((roots.glow.visible = false), true),       // the soft glow around the roots
@@ -610,8 +610,15 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     });
   }
 
+  let lastSize = "";
   function layout(force = false) {
     const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
+    // Phones fire resize whenever the address bar slides in or out while scrolling. The stage is
+    // sized to the tallest viewport (styles.css), so its size does not change then: skip the work,
+    // which used to resize the canvas and regrow the whole root network mid-scroll.
+    const size = `${w}x${h}@${devicePixelRatio}/${getDocHeight ? getDocHeight() : 0}`;
+    if (!force && size === lastSize) return;
+    lastSize = size;
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, maxPR));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
