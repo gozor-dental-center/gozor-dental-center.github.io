@@ -435,7 +435,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
   const L = { vh: 1, h: 1, wv: 1, k: 1, depth: 10, toothX: 0, S: 1.6, heroY: 3.6, heroPitch: -0.105, wide: true, fKey: 0, gKey: 0, gDepth: 0 };
   // Pixel density: capped, and lowered by itself if frames take too long on this device.
   let maxPR = Q.pr;
-  const perf = { n: 0, sum: 0, slow: 0 };
+  const perf = { n: 0, sum: 0, slow: 0, jank: 0 };
   let readyAt = 0;
   const setPR = (v) => {
     maxPR = v;
@@ -450,9 +450,10 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     () => renderer.shadowMap.enabled && ((renderer.shadowMap.enabled = false), scene.traverse((o) => o.material && (o.material.needsUpdate = true)), true),
     () => tooth.material.isMeshPhysicalMaterial && (swapToStandard(), true), // simpler gloss on the teeth
     () => roots.glow.visible && ((roots.glow.visible = false), true),       // the soft glow around the roots
+    () => Q.flora > 0.45 && ((Q.flora *= 0.6), buildFlora(), (renderer.shadowMap.needsUpdate = true), true), // thinner grass
     // No step below 1×: drawing fewer pixels than the screen has made the whole scene look blurry.
   ];
-  const stepNames = ["pixels", "shadows", "gloss", "glow"];
+  const stepNames = ["pixels", "shadows", "gloss", "glow", "grass"];
   const stepDown = () => {
     for (let i = 0; i < ladder.length; i++) if (ladder[i]()) {
       const d = document.documentElement.dataset; // read by bench.js
@@ -686,13 +687,19 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
     if (lost) return;
     const raw = (now - last) / 1000;
     const dt = Math.min(0.05, raw); last = now;
-    // Measure only once the page has settled (teeth and roots built), in windows of 90 frames.
-    if (ready && now - readyAt > 3000 && document.visibilityState === "visible" && raw < 0.5) {
+    // Measure once the page has settled, in windows of 60 frames. A window is slow when the average is
+    // under ~48 fps, or when more than 1 frame in 8 stutters (over 25 ms). Stutter counts on its own:
+    // on Intel HD + Firefox the first screen averaged 46 fps with 30% stuttering frames, which the
+    // old average-only rule (under 38 fps, twice in a row) never caught. Two slow windows in a row
+    // step the quality down, so one hiccup does not.
+    if (ready && now - readyAt > 2000 && document.visibilityState === "visible" && raw < 0.5) {
       perf.sum += raw;
-      if (++perf.n === 90) {
-        perf.slow = Q.adapt && perf.sum / perf.n > 0.026 ? perf.slow + 1 : 0; // slower than ~38 fps
+      if (raw > 0.025) perf.jank++;
+      if (++perf.n === 60) {
+        const slow = perf.sum / perf.n > 0.021 || perf.jank / perf.n > 0.125;
+        perf.slow = Q.adapt && slow ? perf.slow + 1 : 0;
         if (perf.slow >= 2) { perf.slow = 0; stepDown(); }
-        perf.n = 0; perf.sum = 0;
+        perf.n = 0; perf.sum = 0; perf.jank = 0;
       }
     }
     if (!reduce) time.value += dt;
