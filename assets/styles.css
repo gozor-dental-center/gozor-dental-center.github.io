@@ -91,9 +91,10 @@ html.gl-ready .poster { opacity: 0; }
   border-bottom: 1px solid transparent;
   transition: background-color 0.4s var(--ease), border-color 0.4s var(--ease), color 0.5s var(--ease);
 }
-.site-header.is-scrolled { background: rgba(236, 247, 246, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(15, 53, 80, 0.1); }
+/* No backdrop blur: over the live 3D it was redone every frame (costly on iPhone Safari). */
+.site-header.is-scrolled { background: rgba(236, 247, 246, 0.94); border-color: rgba(15, 53, 80, 0.1); }
 html.is-under .site-header { color: var(--u-ink); }
-html.is-under .site-header.is-scrolled { background: rgba(5, 22, 30, 0.72); border-color: var(--u-line); }
+html.is-under .site-header.is-scrolled { background: rgba(5, 22, 30, 0.93); border-color: var(--u-line); }
 .header-inner { height: 100%; display: flex; align-items: center; gap: 28px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand img { height: 50px; width: auto; }
@@ -116,7 +117,7 @@ html.is-under .brand-name { color: var(--u-ink); }
 .btn:active { transform: translateY(1px); }
 .btn-solid { background: var(--blue); color: #fff; box-shadow: 0 12px 28px -12px rgba(40, 130, 196, 0.7); }
 .btn-solid:hover { background: var(--blue-deep); }
-.btn-line { border-color: rgba(15, 53, 80, 0.25); color: var(--ink); background: rgba(255, 255, 255, 0.66); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.btn-line { border-color: rgba(15, 53, 80, 0.25); color: var(--ink); background: rgba(255, 255, 255, 0.84); }
 .btn-line:hover { border-color: var(--blue); color: var(--blue-deep); }
 .btn-lg { padding: 17px 28px; font-size: 20px; }
 .btn-block { width: 100%; }
@@ -418,7 +419,7 @@ html.theme-light {
 html.theme-light body { background: linear-gradient(to bottom, #b9def0 0, #e2f2f4 38vh, #7fd0b0 62vh, #3c9c7b 74vh, #9ccfbe 76vh, var(--soil) 140vh) no-repeat, var(--soil); }
 html.theme-light.gl-ready body { background: var(--soil); }
 html.theme-light .card { box-shadow: 0 24px 50px -28px rgba(15, 53, 80, 0.35); }
-html.theme-light.is-under .site-header.is-scrolled { background: rgba(240, 249, 247, 0.82); }
+html.theme-light.is-under .site-header.is-scrolled { background: rgba(240, 249, 247, 0.94); }
 html.theme-light.is-under .theme-btn { background: rgba(255, 255, 255, 0.7); }
 html.theme-light .h2,
 html.theme-light .roots-scrub,

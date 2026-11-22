@@ -429,7 +429,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
 
   const roots = rootMaterials();
   if (!Q.glow) roots.glow.visible = false;
-  let rootMeshes = [], rootsToken = 0, rootsReady = false;
+  let rootMeshes = [], rootsToken = 0, rootsReady = false, warmRoots = false;
 
   // ---------- layout ----------
   const L = { vh: 1, h: 1, wv: 1, k: 1, depth: 10, toothX: 0, S: 1.6, heroY: 3.6, heroPitch: -0.105, wide: true, fKey: 0, gKey: 0, gDepth: 0 };
@@ -592,6 +592,7 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
       });
       below.add(...rootMeshes);
       rootsReady = true;
+      warmRoots = true;
     });
 
     // Withered roots of the damaged teeth: short, thin, no glow.
@@ -757,7 +758,18 @@ export function createScene(canvas, { reduce = false, getScroll, getDocHeight, g
       }
       return;
     }
-    renderer.render(scene, camera);
+    if (warmRoots) {
+      // Draw every root band once, while the page is still at the top, so the browser uploads them
+      // all now. Otherwise each band was uploaded the moment it first scrolled into view, which
+      // made a visible hitch right where the camera goes below the ground (seen on iPhone).
+      warmRoots = false;
+      const culled = rootMeshes.filter((m) => m.frustumCulled);
+      culled.forEach((m) => (m.frustumCulled = false));
+      renderer.render(scene, camera);
+      culled.forEach((m) => (m.frustumCulled = true));
+    } else {
+      renderer.render(scene, camera);
+    }
     if (!ready) { ready = true; readyAt = now; onReady?.(); }
   }
 
