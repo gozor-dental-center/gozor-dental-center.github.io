@@ -330,3 +330,8 @@ if (hasGsap) {
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
   addEventListener("load", () => ScrollTrigger.refresh());
 }
+
+// Time-limited items (like the Black Friday offer) carry data-until; drop them once that moment passes.
+document.querySelectorAll("[data-until]").forEach((el) => {
+  if (Date.now() >= Date.parse(el.dataset.until)) el.remove();
+});

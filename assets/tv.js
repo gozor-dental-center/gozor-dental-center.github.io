@@ -18,9 +18,22 @@ const keepAwake = async () => {
 keepAwake();
 document.addEventListener("visibilitychange", keepAwake);
 
-// Reload every 3 hours at the top, so the screen picks up site updates and starts fresh.
+// Reload every hour at the top, so the screen picks up site updates and starts fresh.
 const startedAt = Date.now();
-const reloadDue = () => Date.now() - startedAt > 3 * 3600 * 1000 && navigator.onLine;
+let updated = false;
+const reloadDue = () => (updated || Date.now() - startedAt > 3600 * 1000) && navigator.onLine;
+
+// Every 2 minutes, ask the server when the site last changed; after a new deploy, reload right away
+// (the scroll loop above checks this too, but this one does not wait for the end of a pass).
+let stamp = null;
+setInterval(async () => {
+  try {
+    const r = await fetch(location.pathname, { method: "HEAD", cache: "no-store" });
+    const now = r.headers.get("last-modified") || r.headers.get("etag");
+    if (stamp && now && now !== stamp) { updated = true; location.reload(); }
+    stamp = now || stamp;
+  } catch {}
+}, 120000);
 
 // Moves the page from one point to another at an even speed, easing in and out at the ends.
 const glide = (from, to) => new Promise((done) => {
